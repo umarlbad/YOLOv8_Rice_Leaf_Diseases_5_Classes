@@ -97,14 +97,11 @@ class ModelExporter:
             tensorrt_results = model.export(
                 format="engine",
                 imgsz=config['image_size'],
-                dynamic=False,
+                dynamic=True,
                 simplify=True,
                 half=True,
-                int8=False,
                 device=self.device,
-                workspace=8,
-                nms=True,
-                batch=config['batch']
+                nms=True
             )
             # Debug hasil ekspor
             self.log_message(f"Export TensorRT results: {tensorrt_results}")\
@@ -163,11 +160,8 @@ class ModelExporter:
                 imgsz=config['image_size'],
                 dynamic=True,
                 half=True,
-                int8=False,
                 device=self.device,
-                workspace=8,
-                nms=False,
-                batch=config['batch']
+                nms=True
             )
             # Debug hasil ekspor
             self.log_message(f"Export ONNX results: {onnx_results}")
