@@ -1,53 +1,9 @@
-import os, random, torch, logging
+import os, random, torch
 import numpy as np
 from PIL import Image
 from pathlib import Path
 from torch.utils.data import Dataset
-
-# Setup logging yang lebih terstruktur
-class LoggerManager:
-    def __init__(self, log_file):
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        
-        # Pastikan direktori tempat menyimpan log ada
-        log_dir = Path(log_file).parent
-        log_dir.mkdir(parents=True, exist_ok=True)
-
-        # File Handler
-        if not self.logger.handlers:
-            try:
-                # File handler
-                file_handler = logging.FileHandler(log_file, mode='w')
-                file_handler.setLevel(logging.INFO)
-                file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-                file_handler.setFormatter(file_formatter)
-                
-                # Console handler
-                console_handler = logging.StreamHandler()
-                console_handler.setLevel(logging.INFO)
-                console_formatter = logging.Formatter('%(levelname)s: %(message)s')
-                console_handler.setFormatter(console_formatter)
-                
-                # Add handlers
-                self.logger.addHandler(file_handler)
-                self.logger.addHandler(console_handler)
-
-            except Exception as e:
-                print(f"Error setting up logger: {e}")
-                raise
-
-    def info(self, message):
-        """Log info message to both file and console"""
-        self.logger.info(message)
-        
-    def error(self, message):
-        """Log error message to both file and console"""
-        self.logger.error(message)
-        
-    def debug(self, message):
-        """Log debug message to both file and console"""
-        self.logger.debug(message)
+from logger import LoggerManager
 
 class YOLODataset(Dataset):
     def __init__(self, main_dir, classes, log_dir:Path, data:str):
@@ -130,27 +86,6 @@ class YOLODataset(Dataset):
         """Return total number of valid pairs."""
         return len(self.valid_pairs)
     
-    def get_label(self, _, lbl_path):
-        """
-        Retrieve label(s) from the label file.
-        Args:
-            img_path: Path to the image file (relative or absolute).
-            lbl_path: Path to the corresponding label file (relative or absolute).
-        Returns:
-            List of class IDs found in the label file.
-        """
-        try:
-            full_label_path = os.path.join(self.labels_dir, lbl_path)
-            if not os.path.exists(full_label_path):
-                return []  # No label file exists for this image
-            
-            with open(full_label_path, 'r') as f:
-                labels = [int(line.split()[0]) for line in f.readlines() if line.strip()]
-            
-            return labels
-        except Exception as e:
-            self.logger.error(f"Error retrieving labels for {lbl_path}: {e}")
-            return []
 
     def __getitem__(self, idx):
         """ Get image and annotation at a specific index """
@@ -308,49 +243,3 @@ class DatasetVerificator:
         self.logger.info("\nJumlah file gambar per subdirektori:")
         for subdir, count in image_subdirs.items():
             self.logger.info(f"  Subdirektori '{subdir}': {count} file.")
-
-# Config
-DATASET_DIR = Path("D:/Riset Skripsi/dataset_skripsi")
-MAIN_DIR = Path("D:/Riset Skripsi/script riset/deteksi_citra")
-
-# Example usage
-def main():
-    try:
-        # Running Program
-        print("\n=== Memulai Loader Dataset Untuk Proses Deteksi Citra dengan YOLOV8 ===\n")
-        data = input(f"Masukkan jenis data citra yang ingin diolah hasilnya (nonbg/bg/mix): ").strip()
-        
-        # Pastikan input valid
-        if data not in {"nonbg", "bg", "mix"}:
-            raise ValueError(f"Jenis data '{data}' tidak valid. Harus 'nonbg', 'bg', atau 'mix'.")# Initialize Logging function
-        
-        main_dir = DATASET_DIR /f"dataset_{data}"
-        LOG_PATH = MAIN_DIR / data / 'logging'
-        
-        classes = ["bercak cokelat",
-            "bercak cokelat tipis",
-            "blas daun",
-            "lepuh daun",
-            "hawar daun bakteri",
-            "sehat"]  # Replace with actual class names
-        
-        dataset = YOLODataset(main_dir, classes, LOG_PATH, data)
-        visualizer = DatasetVerificator(dataset, classes, LOG_PATH, data)
-        
-        # Tampilkan detail dataset
-        visualizer.display_detailed_dataset_info()
-        
-        # Tampilkan informasi file label
-        visualizer.display_label_file_info()
-        
-        # Tampilkan informasi direktori gambar
-        visualizer.display_image_directory_info()
-        # Tampilkan informasi sampel random dari dataset
-        visualizer.display_sample(1)
-        
-        
-    except Exception as e:
-        print(f"Error: {str(e)}")
-
-if __name__ == "__main__":
-    main()
